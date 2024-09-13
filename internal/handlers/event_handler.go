@@ -14,7 +14,7 @@ func CreateEvent(db *sql.DB) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		event := new(models.Event)
 		if err := c.Bind(event); err != nil {
-			return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid request payload"})
+			return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid request"})
 		}
 
 		if err := c.Validate(event); err != nil {
@@ -41,6 +41,21 @@ func GetAllEvents(db *sql.DB) echo.HandlerFunc {
 	}
 }
 
+func GetEvent(db *sql.DB) echo.HandlerFunc {
+	return func(c echo.Context) error {
+		id, err := strconv.ParseInt(c.Param("id"), 10, 64)
+		if err != nil {
+			return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid ID"})
+		}
+		eventRepo := repositories.EventRepository{DB: db}
+		event, err := eventRepo.Get(id)
+		if err != nil {
+			return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to get event"})
+		}
+		return c.JSON(http.StatusOK, event)
+	}
+}
+
 func DeleteEvent(db *sql.DB) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		id, err := strconv.ParseInt(c.Param("id"), 10, 64)
@@ -55,3 +70,12 @@ func DeleteEvent(db *sql.DB) echo.HandlerFunc {
 		return c.JSON(http.StatusOK, map[string]string{"message": "Event deleted successfully"})
 	}
 }
+
+// func UpdateEvent(db *sql.DB) echo.HandlerFunc {
+// 	return func(c echo.Context) error {
+// 		id, err := strconv.ParseInt(c.Param("id"), 10, 64)
+// 		if err != nil {
+// 			return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid ID"})
+// 		}
+// 	}
+// }

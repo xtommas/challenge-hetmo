@@ -27,6 +27,52 @@ func (e EventRepository) Insert(event *models.Event) error {
 	return err
 }
 
+func (e EventRepository) Update(event *models.Event) error {
+	query := `
+            UPDATE events 
+            SET title = $1, long_description = $2, short_description = $3, date_and_time = $4, organizer = $5, location = $6, status = $7 
+            WHERE id = $8`
+	result, err := e.DB.Exec(query,
+		event.Title,
+		event.LongDescription,
+		event.ShortDescription,
+		event.DateAndTime,
+		event.Organizer,
+		event.Location,
+		event.Status)
+	if err != nil {
+		return err
+	}
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if rowsAffected == 0 {
+		return errors.New("record not found")
+	}
+	return nil
+}
+
+func (e EventRepository) Get(id int64) (*models.Event, error) {
+	query := `SELECT * FROM events WHERE id = $1`
+	row := e.DB.QueryRow(query, id)
+	var event models.Event
+	err := row.Scan(
+		&event.Id,
+		&event.Title,
+		&event.LongDescription,
+		&event.ShortDescription,
+		&event.DateAndTime,
+		&event.Organizer,
+		&event.Location,
+		&event.Status,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return &event, nil
+}
+
 func (e EventRepository) GetAll() ([]models.Event, error) {
 	query := `SELECT * FROM events`
 	rows, err := e.DB.Query(query)
@@ -74,7 +120,7 @@ func (e EventRepository) Delete(id int64) error {
 		return err
 	}
 	if rowsAffected == 0 {
-		return errors.New("no rows affected")
+		return errors.New("record not found")
 	}
 	return nil
 }
