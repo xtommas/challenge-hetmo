@@ -3,6 +3,7 @@ package repositories
 import (
 	"database/sql"
 	"errors"
+	"time"
 
 	"github.com/xtommas/challenge-hetmo/internal/models"
 )
@@ -74,8 +75,44 @@ func (e EventRepository) Get(id int64) (*models.Event, error) {
 	return &event, nil
 }
 
-func (e EventRepository) GetAll() ([]models.Event, error) {
-	query := `SELECT * FROM events`
+func (e EventRepository) GetAll(date time.Time, status string, title string) ([]models.Event, error) {
+	query := `SELECT * FROM events WHERE 1=1`
+	rows, err := e.DB.Query(query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	// Get all the data from the rows
+	var events []models.Event
+	for rows.Next() {
+		var event models.Event
+		err := rows.Scan(
+			&event.Id,
+			&event.Title,
+			&event.LongDescription,
+			&event.ShortDescription,
+			&event.DateAndTime,
+			&event.Organizer,
+			&event.Location,
+			&event.Status,
+		)
+		if err != nil {
+			return nil, err
+		}
+		events = append(events, event)
+	}
+
+	// Check if there were errors during the iteration
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return events, nil
+}
+
+func (e EventRepository) GetPublished() ([]models.Event, error) {
+	query := `SELECT * FROM events WHERE status = 'published'`
 	rows, err := e.DB.Query(query)
 	if err != nil {
 		return nil, err

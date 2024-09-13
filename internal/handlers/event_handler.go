@@ -33,8 +33,12 @@ func CreateEvent(db *sql.DB) echo.HandlerFunc {
 
 func GetAllEvents(db *sql.DB) echo.HandlerFunc {
 	return func(c echo.Context) error {
+		date := c.QueryParam("date")
+		status := c.QueryParam("status")
+		title := c.QueryParam("title")
+
 		eventRepo := repositories.EventRepository{DB: db}
-		events, err := eventRepo.GetAll()
+		events, err := eventRepo.GetAll(date, status, title)
 		if err != nil {
 			return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to get events"})
 		}
