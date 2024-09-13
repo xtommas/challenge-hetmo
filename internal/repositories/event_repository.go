@@ -25,3 +25,39 @@ func (e EventRepository) Insert(event *models.Event) error {
 		event.Status).Scan(&event.Id)
 	return err
 }
+
+func (e EventRepository) GetAll() ([]models.Event, error) {
+	query := `SELECT * FROM events`
+	rows, err := e.DB.Query(query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	// Get all the data from the rows
+	var events []models.Event
+	for rows.Next() {
+		var event models.Event
+		err := rows.Scan(
+			&event.Id,
+			&event.Title,
+			&event.LongDescription,
+			&event.ShortDescription,
+			&event.DateAndTime,
+			&event.Organizer,
+			&event.Location,
+			&event.Status,
+		)
+		if err != nil {
+			return nil, err
+		}
+		events = append(events, event)
+	}
+
+	// Check if there were errors during the iteration
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return events, nil
+}

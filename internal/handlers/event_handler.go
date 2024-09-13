@@ -28,3 +28,14 @@ func CreateEvent(db *sql.DB) echo.HandlerFunc {
 		return c.JSON(http.StatusCreated, event)
 	}
 }
+
+func GetAllEvents(db *sql.DB) echo.HandlerFunc {
+	return func(c echo.Context) error {
+		eventRepo := repositories.EventRepository{DB: db}
+		events, err := eventRepo.GetAll()
+		if err != nil {
+			return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to get events"})
+		}
+		return c.JSON(http.StatusOK, events)
+	}
+}
