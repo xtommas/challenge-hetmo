@@ -2,6 +2,7 @@ package repositories
 
 import (
 	"database/sql"
+	"errors"
 
 	"github.com/xtommas/challenge-hetmo/internal/models"
 )
@@ -60,4 +61,20 @@ func (e EventRepository) GetAll() ([]models.Event, error) {
 	}
 
 	return events, nil
+}
+
+func (e EventRepository) Delete(id int64) error {
+	query := `DELETE FROM events WHERE id = $1`
+	result, err := e.DB.Exec(query, id)
+	if err != nil {
+		return err
+	}
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if rowsAffected == 0 {
+		return errors.New("no rows affected")
+	}
+	return nil
 }
