@@ -39,7 +39,8 @@ func (e EventRepository) Update(event *models.Event) error {
 		event.DateAndTime,
 		event.Organizer,
 		event.Location,
-		event.Status)
+		event.Status,
+		event.Id)
 	if err != nil {
 		return err
 	}
