@@ -15,7 +15,7 @@ func (e EventRepository) Insert(event *models.Event) error {
             INSERT INTO events (title, long_description, short_description, date_and_time, organizer, location, status) 
             VALUES ($1, $2, $3, $4, $5, $6, $7) 
             RETURNING id`
-	return e.DB.QueryRow(query,
+	err := e.DB.QueryRow(query,
 		event.Title,
 		event.LongDescription,
 		event.ShortDescription,
@@ -23,4 +23,5 @@ func (e EventRepository) Insert(event *models.Event) error {
 		event.Organizer,
 		event.Location,
 		event.Status).Scan(&event.Id)
+	return err
 }
