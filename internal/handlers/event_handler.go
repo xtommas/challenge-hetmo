@@ -24,7 +24,7 @@ func CreateEvent(db *sql.DB) echo.HandlerFunc {
 		}
 
 		eventRepo := repositories.EventRepository{DB: db}
-		err := eventRepo.Insert(event)
+		err := eventRepo.Create(event)
 		if err != nil {
 			return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to create event"})
 		}

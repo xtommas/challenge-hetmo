@@ -10,7 +10,7 @@ type UserEventRepository struct {
 	DB *sql.DB
 }
 
-func (r *UserEventRepository) GetUserEvents(userID int64, filter string) ([]models.Event, error) {
+func (r *UserEventRepository) GetAll(userID int64, filter string) ([]models.Event, error) {
 	var query string
 	var args []interface{}
 

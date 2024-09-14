@@ -34,7 +34,7 @@ func Register(db *sql.DB) echo.HandlerFunc {
 		}
 
 		userRepo := repositories.UserRepository{DB: db}
-		err := userRepo.CreateUser(user)
+		err := userRepo.Create(user)
 		if err != nil {
 			return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to register user"})
 		}
@@ -52,8 +52,8 @@ func Login(db *sql.DB) echo.HandlerFunc {
 			return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid input"})
 		}
 
-		UserRepo := repositories.UserRepository{DB: db}
-		user, err := UserRepo.GetUserByUsername(input.Username)
+		userRepo := repositories.UserRepository{DB: db}
+		user, err := userRepo.Get(input.Username)
 		if err != nil {
 			return c.JSON(http.StatusUnauthorized, map[string]string{"error": "Invalid credentials"})
 		}

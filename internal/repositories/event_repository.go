@@ -14,7 +14,7 @@ type EventRepository struct {
 	DB *sql.DB
 }
 
-func (e *EventRepository) Insert(event *models.Event) error {
+func (e *EventRepository) Create(event *models.Event) error {
 	// Make the title lowercase for case-insensitive filtering
 	event.Title = strings.ToLower(event.Title)
 	// Make these lowercase as well, in case we may want to
