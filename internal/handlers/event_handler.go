@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/labstack/echo/v4"
@@ -33,12 +34,50 @@ func CreateEvent(db *sql.DB) echo.HandlerFunc {
 
 func GetAllEvents(db *sql.DB) echo.HandlerFunc {
 	return func(c echo.Context) error {
-		date := c.QueryParam("date")
-		status := c.QueryParam("status")
-		title := c.QueryParam("title")
+		// isAdmin := c.Get("isAdmin").(bool)
+
+		dateStartStr := c.QueryParam("date_start")
+		dateEndStr := c.QueryParam("date_end")
+		status := strings.ToLower(c.QueryParam("status"))
+		title := strings.ToLower(c.QueryParam("title"))
+
+		// Parse the dates into a time.Time
+		var dateStart, dateEnd time.Time
+		var err error
+
+		// Parse date_start if provided
+		if dateStartStr != "" {
+			dateStart, err = time.Parse("2006-01-02", dateStartStr)
+			if err != nil {
+				return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid date_start format. Use YYYY-MM-DD."})
+			}
+		}
+
+		// Parse date_end if provided
+		if dateEndStr != "" {
+			dateEnd, err = time.Parse("2006-01-02", dateEndStr)
+			if err != nil {
+				return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid date_end format. Use YYYY-MM-DD."})
+			}
+			// Set end time to the end of the date_end day (23:59:59)
+			dateEnd = dateEnd.Add(24 * time.Hour).Add(-time.Second)
+		}
+
+		// Admins can filter by status, but validate the status parameter
+		// if isAdmin {
+		// 	if status != "" && status != "draft" && status != "published" {
+		// 		return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid status."})
+		// 	}
+		// } else {
+		// 	// Non-admins can only see published events
+		// 	if status != "" && status != "published" {
+		// 		return c.JSON(http.StatusForbidden, map[string]string{"error": "Non-admin users can only view published events."})
+		// 	}
+		// 	status = "published"
+		// }
 
 		eventRepo := repositories.EventRepository{DB: db}
-		events, err := eventRepo.GetAll(date, status, title)
+		events, err := eventRepo.GetAll(dateStart, dateEnd, status, title)
 		if err != nil {
 			return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to get events"})
 		}
