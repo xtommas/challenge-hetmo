@@ -17,6 +17,10 @@ type EventRepository struct {
 func (e EventRepository) Insert(event *models.Event) error {
 	// Make the title lowercase for case-insensitive filtering
 	event.Title = strings.ToLower(event.Title)
+	// Make these lowercase as well, in case we may want to
+	// filter them in the future using query params
+	event.Organizer = strings.ToLower(event.Organizer)
+	event.Location = strings.ToLower(event.Location)
 	query := `
             INSERT INTO events (title, long_description, short_description, date_and_time, organizer, location, status) 
             VALUES ($1, $2, $3, $4, $5, $6, $7) 
