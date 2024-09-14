@@ -14,13 +14,23 @@ import (
 
 func Register(db *sql.DB) echo.HandlerFunc {
 	return func(c echo.Context) error {
-		user := new(models.User)
-		if err := c.Bind(user); err != nil {
+		var input struct {
+			Username string `json:"username" validate:"required,min=3,max=50"`
+			Password string `json:"password" validate:"required,min=5"`
+		}
+		if err := c.Bind(&input); err != nil {
 			return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid request"})
 		}
 
-		if err := c.Validate(user); err != nil {
+		if err := c.Validate(input); err != nil {
 			return c.JSON(http.StatusBadRequest, map[string]string{"error": err.Error()})
+		}
+
+		user := &models.User{
+			Username: input.Username,
+		}
+		if err := user.SetPassword(input.Password); err != nil {
+			return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to set password"})
 		}
 
 		userRepo := repositories.UserRepository{DB: db}
@@ -34,21 +44,21 @@ func Register(db *sql.DB) echo.HandlerFunc {
 
 func Login(db *sql.DB) echo.HandlerFunc {
 	return func(c echo.Context) error {
-		var loginData struct {
+		var input struct {
 			Username string `json:"username"`
 			Password string `json:"password"`
 		}
-		if err := c.Bind(&loginData); err != nil {
+		if err := c.Bind(&input); err != nil {
 			return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid input"})
 		}
 
 		UserRepo := repositories.UserRepository{DB: db}
-		user, err := UserRepo.GetUserByUsername(loginData.Username)
+		user, err := UserRepo.GetUserByUsername(input.Username)
 		if err != nil {
 			return c.JSON(http.StatusUnauthorized, map[string]string{"error": "Invalid credentials"})
 		}
 
-		if !user.CheckPassword(loginData.Password) {
+		if !user.CheckPassword(input.Password) {
 			return c.JSON(http.StatusUnauthorized, map[string]string{"error": "Invalid credentials"})
 		}
 
@@ -56,7 +66,7 @@ func Login(db *sql.DB) echo.HandlerFunc {
 
 		// Set claims (the info that the JWT transmits)
 		claims := token.Claims.(jwt.MapClaims)
-		claims["id"] = user.ID
+		claims["user_id"] = user.ID
 		claims["username"] = user.Username
 		claims["is_admin"] = user.IsAdmin
 		claims["exp"] = time.Now().Add(time.Hour * 72).Unix()

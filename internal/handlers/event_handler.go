@@ -34,7 +34,7 @@ func CreateEvent(db *sql.DB) echo.HandlerFunc {
 
 func GetAllEvents(db *sql.DB) echo.HandlerFunc {
 	return func(c echo.Context) error {
-		// isAdmin := c.Get("isAdmin").(bool)
+		isAdmin := c.Get("is_admin").(bool)
 
 		dateStartStr := c.QueryParam("date_start")
 		dateEndStr := c.QueryParam("date_end")
@@ -64,17 +64,17 @@ func GetAllEvents(db *sql.DB) echo.HandlerFunc {
 		}
 
 		// Admins can filter by status, but validate the status parameter
-		// if isAdmin {
-		// 	if status != "" && status != "draft" && status != "published" {
-		// 		return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid status."})
-		// 	}
-		// } else {
-		// 	// Non-admins can only see published events
-		// 	if status != "" && status != "published" {
-		// 		return c.JSON(http.StatusForbidden, map[string]string{"error": "Non-admin users can only view published events."})
-		// 	}
-		// 	status = "published"
-		// }
+		if isAdmin {
+			if status != "" && status != "draft" && status != "published" {
+				return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid status."})
+			}
+		} else {
+			// Non-admins can only see published events
+			if status != "" && status != "published" {
+				return c.JSON(http.StatusForbidden, map[string]string{"error": "Access denied"})
+			}
+			status = "published"
+		}
 
 		eventRepo := repositories.EventRepository{DB: db}
 		events, err := eventRepo.GetAll(dateStart, dateEnd, status, title)
@@ -87,6 +87,7 @@ func GetAllEvents(db *sql.DB) echo.HandlerFunc {
 
 func GetEvent(db *sql.DB) echo.HandlerFunc {
 	return func(c echo.Context) error {
+		isAdmin := c.Get("is_admin").(bool)
 		id, err := strconv.ParseInt(c.Param("id"), 10, 64)
 		if err != nil {
 			return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid ID"})
@@ -96,6 +97,11 @@ func GetEvent(db *sql.DB) echo.HandlerFunc {
 		if err != nil {
 			return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to get event"})
 		}
+
+		if event.Status == "draft" && !isAdmin {
+			return c.JSON(http.StatusForbidden, map[string]string{"error": "Access denied"})
+		}
+
 		return c.JSON(http.StatusOK, event)
 	}
 }

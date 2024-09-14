@@ -7,7 +7,7 @@ import (
 type User struct {
 	ID       int64  `json:"id"`
 	Username string `json:"username" validate:"required,min=3,max=50"`
-	Password string `json:"-" validate:"required,min=6"`
+	Password string `json:"-" validate:"required,min=5"`
 	IsAdmin  bool   `json:"is_admin"`
 }
 
