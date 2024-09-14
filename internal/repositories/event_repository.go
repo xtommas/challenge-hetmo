@@ -14,7 +14,7 @@ type EventRepository struct {
 	DB *sql.DB
 }
 
-func (e EventRepository) Insert(event *models.Event) error {
+func (e *EventRepository) Insert(event *models.Event) error {
 	// Make the title lowercase for case-insensitive filtering
 	event.Title = strings.ToLower(event.Title)
 	// Make these lowercase as well, in case we may want to
@@ -36,7 +36,7 @@ func (e EventRepository) Insert(event *models.Event) error {
 	return err
 }
 
-func (e EventRepository) Update(event *models.Event) error {
+func (e *EventRepository) Update(event *models.Event) error {
 	// Make the title lowercase for case-insensitive filtering
 	event.Title = strings.ToLower(event.Title)
 	query := `
@@ -65,7 +65,7 @@ func (e EventRepository) Update(event *models.Event) error {
 	return nil
 }
 
-func (e EventRepository) Get(id int64) (*models.Event, error) {
+func (e *EventRepository) Get(id int64) (*models.Event, error) {
 	query := `SELECT * FROM events WHERE id = $1`
 	row := e.DB.QueryRow(query, id)
 	var event models.Event
@@ -85,7 +85,7 @@ func (e EventRepository) Get(id int64) (*models.Event, error) {
 	return &event, nil
 }
 
-func (e EventRepository) GetAll(dateStart, dateEnd time.Time, status string, title string) ([]models.Event, error) {
+func (e *EventRepository) GetAll(dateStart, dateEnd time.Time, status string, title string) ([]models.Event, error) {
 	// Add a condition that's always true in the query
 	// so we can append other conditions based on the
 	// query parameters that are provided
@@ -152,7 +152,7 @@ func (e EventRepository) GetAll(dateStart, dateEnd time.Time, status string, tit
 	return events, nil
 }
 
-func (e EventRepository) Delete(id int64) error {
+func (e *EventRepository) Delete(id int64) error {
 	query := `DELETE FROM events WHERE id = $1`
 	result, err := e.DB.Exec(query, id)
 	if err != nil {
