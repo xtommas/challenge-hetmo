@@ -2,12 +2,42 @@ package repositories
 
 import (
 	"database/sql"
+	"errors"
+	"time"
 
 	"github.com/xtommas/challenge-hetmo/internal/models"
 )
 
 type UserEventRepository struct {
 	DB *sql.DB
+}
+
+func (r *UserEventRepository) CreateSignUp(userID, eventID int64) error {
+	// Ensure the event is published and the date is in the future
+	// 'WHERE EXISTS' makes the insert only occur if the conditions are met
+	query := `
+		INSERT INTO user_events (user_id, event_id)
+		SELECT $1, $2
+		WHERE EXISTS (
+			SELECT 1 FROM events
+			WHERE id = $2 AND status = 'published' AND date_and_time > $3
+		)`
+
+	result, err := r.DB.Exec(query, userID, eventID, time.Now())
+	if err != nil {
+		return err
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if rowsAffected == 0 {
+		return errors.New("Can't sign up to event")
+	}
+
+	return nil
 }
 
 func (r *UserEventRepository) GetAll(userID int64, filter string) ([]models.Event, error) {
