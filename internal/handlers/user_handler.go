@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"database/sql"
 	"net/http"
 	"os"
 	"time"
@@ -12,7 +11,7 @@ import (
 	"github.com/xtommas/challenge-hetmo/internal/repositories"
 )
 
-func Register(db *sql.DB) echo.HandlerFunc {
+func Register(userRepo *repositories.UserRepository) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		var input struct {
 			Username string `json:"username" validate:"required,min=3,max=50"`
@@ -33,7 +32,6 @@ func Register(db *sql.DB) echo.HandlerFunc {
 			return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to set password"})
 		}
 
-		userRepo := repositories.UserRepository{DB: db}
 		err := userRepo.Create(user)
 		if err != nil {
 			return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to register user"})
@@ -42,7 +40,7 @@ func Register(db *sql.DB) echo.HandlerFunc {
 	}
 }
 
-func Login(db *sql.DB) echo.HandlerFunc {
+func Login(userRepo *repositories.UserRepository) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		var input struct {
 			Username string `json:"username"`
@@ -52,7 +50,6 @@ func Login(db *sql.DB) echo.HandlerFunc {
 			return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid input"})
 		}
 
-		userRepo := repositories.UserRepository{DB: db}
 		user, err := userRepo.Get(input.Username)
 		if err != nil {
 			return c.JSON(http.StatusUnauthorized, map[string]string{"error": "Invalid credentials"})

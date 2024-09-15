@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"database/sql"
 	"net/http"
 	"strconv"
 	"strings"
@@ -12,7 +11,7 @@ import (
 	"github.com/xtommas/challenge-hetmo/internal/repositories"
 )
 
-func CreateEvent(db *sql.DB) echo.HandlerFunc {
+func CreateEvent(eventRepo *repositories.EventRepository) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		event := new(models.Event)
 		if err := c.Bind(event); err != nil {
@@ -23,7 +22,6 @@ func CreateEvent(db *sql.DB) echo.HandlerFunc {
 			return c.JSON(http.StatusBadRequest, map[string]string{"error": err.Error()})
 		}
 
-		eventRepo := repositories.EventRepository{DB: db}
 		err := eventRepo.Create(event)
 		if err != nil {
 			return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to create event"})
@@ -32,7 +30,7 @@ func CreateEvent(db *sql.DB) echo.HandlerFunc {
 	}
 }
 
-func GetAllEvents(db *sql.DB) echo.HandlerFunc {
+func GetAllEvents(eventRepo *repositories.EventRepository) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		isAdmin := c.Get("is_admin").(bool)
 
@@ -76,7 +74,6 @@ func GetAllEvents(db *sql.DB) echo.HandlerFunc {
 			status = "published"
 		}
 
-		eventRepo := repositories.EventRepository{DB: db}
 		events, err := eventRepo.GetAll(dateStart, dateEnd, status, title)
 		if err != nil {
 			return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to get events"})
@@ -85,14 +82,13 @@ func GetAllEvents(db *sql.DB) echo.HandlerFunc {
 	}
 }
 
-func GetEvent(db *sql.DB) echo.HandlerFunc {
+func GetEvent(eventRepo *repositories.EventRepository) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		isAdmin := c.Get("is_admin").(bool)
 		id, err := strconv.ParseInt(c.Param("id"), 10, 64)
 		if err != nil {
 			return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid ID"})
 		}
-		eventRepo := repositories.EventRepository{DB: db}
 		event, err := eventRepo.Get(id)
 		if err != nil {
 			return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to get event"})
@@ -106,13 +102,12 @@ func GetEvent(db *sql.DB) echo.HandlerFunc {
 	}
 }
 
-func DeleteEvent(db *sql.DB) echo.HandlerFunc {
+func DeleteEvent(eventRepo *repositories.EventRepository) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		id, err := strconv.ParseInt(c.Param("id"), 10, 64)
 		if err != nil {
 			return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid ID"})
 		}
-		eventRepo := repositories.EventRepository{DB: db}
 		err = eventRepo.Delete(id)
 		if err != nil {
 			return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to delete event"})
@@ -121,13 +116,12 @@ func DeleteEvent(db *sql.DB) echo.HandlerFunc {
 	}
 }
 
-func UpdateEvent(db *sql.DB) echo.HandlerFunc {
+func UpdateEvent(eventRepo *repositories.EventRepository) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		id, err := strconv.ParseInt(c.Param("id"), 10, 64)
 		if err != nil {
 			return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid ID"})
 		}
-		eventRepo := repositories.EventRepository{DB: db}
 		event, err := eventRepo.Get(id)
 		if err != nil {
 			return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to get event"})
