@@ -2,7 +2,6 @@ package repositories
 
 import (
 	"database/sql"
-	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -37,8 +36,11 @@ func (e *EventRepository) Create(event *models.Event) error {
 }
 
 func (e *EventRepository) Update(event *models.Event) error {
-	// Make the title lowercase for case-insensitive filtering
+	// Make the title, organizer and location lowercase for case-insensitive filtering
 	event.Title = strings.ToLower(event.Title)
+	event.Organizer = strings.ToLower(event.Organizer)
+	event.Location = strings.ToLower(event.Location)
+
 	query := `
             UPDATE events 
             SET title = $1, long_description = $2, short_description = $3, date_and_time = $4, organizer = $5, location = $6, status = $7 
@@ -60,7 +62,7 @@ func (e *EventRepository) Update(event *models.Event) error {
 		return err
 	}
 	if rowsAffected == 0 {
-		return errors.New("record not found")
+		return sql.ErrNoRows
 	}
 	return nil
 }
@@ -80,6 +82,9 @@ func (e *EventRepository) Get(id int64) (*models.Event, error) {
 		&event.Status,
 	)
 	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, sql.ErrNoRows
+		}
 		return nil, err
 	}
 	return &event, nil
@@ -163,7 +168,7 @@ func (e *EventRepository) Delete(id int64) error {
 		return err
 	}
 	if rowsAffected == 0 {
-		return errors.New("record not found")
+		return sql.ErrNoRows
 	}
 	return nil
 }

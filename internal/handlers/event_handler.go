@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"database/sql"
 	"net/http"
 	"strconv"
 	"strings"
@@ -91,11 +92,14 @@ func GetEvent(eventRepo *repositories.EventRepository) echo.HandlerFunc {
 		}
 		event, err := eventRepo.Get(id)
 		if err != nil {
+			if err == sql.ErrNoRows {
+				return c.JSON(http.StatusNotFound, map[string]string{"error": "Event not found"})
+			}
 			return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to get event"})
 		}
 
 		if event.Status == "draft" && !isAdmin {
-			return c.JSON(http.StatusForbidden, map[string]string{"error": "Access denied"})
+			return c.JSON(http.StatusNotFound, map[string]string{"error": "Event not found"})
 		}
 
 		return c.JSON(http.StatusOK, event)
@@ -110,6 +114,9 @@ func DeleteEvent(eventRepo *repositories.EventRepository) echo.HandlerFunc {
 		}
 		err = eventRepo.Delete(id)
 		if err != nil {
+			if err == sql.ErrNoRows {
+				return c.JSON(http.StatusNotFound, map[string]string{"error": "Event not found"})
+			}
 			return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to delete event"})
 		}
 		return c.JSON(http.StatusOK, map[string]string{"message": "Event deleted successfully"})
@@ -124,6 +131,9 @@ func UpdateEvent(eventRepo *repositories.EventRepository) echo.HandlerFunc {
 		}
 		event, err := eventRepo.Get(id)
 		if err != nil {
+			if err == sql.ErrNoRows {
+				return c.JSON(http.StatusNotFound, map[string]string{"error": "Event not found"})
+			}
 			return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to get event"})
 		}
 
@@ -169,6 +179,9 @@ func UpdateEvent(eventRepo *repositories.EventRepository) echo.HandlerFunc {
 
 		err = eventRepo.Update(event)
 		if err != nil {
+			if err == sql.ErrNoRows {
+				return c.JSON(http.StatusNotFound, map[string]string{"error": "Event not found"})
+			}
 			return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to update event"})
 		}
 		return c.JSON(http.StatusOK, event)
