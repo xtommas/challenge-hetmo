@@ -4,28 +4,27 @@ Solución para el challenge backend de Hetmo.
 
 ## Requisitos
 
-- Gestión de eventos solamente por administradores
-- Usuarios y administradores pueden inscribirse a eventos publicados
-- Se debe poder filtrar los eventos por fecha, estado y título
-- Los usuarios pueden filtrar los eventos a los que se han inscripto en base a si ya ocurrieron o no
+- Gestión de eventos solamente por administradores.
+- Usuarios y administradores pueden inscribirse a eventos publicados.
+- Se debe poder filtrar los eventos por fecha, estado y título.
+- Los usuarios pueden filtrar los eventos a los que se han inscripto en base a si ya ocurrieron o no.
 
 ## Endpoints
 
 La API cuenta con los siguientes endpoints:
 
-| Método | Ruta                      | Acción                       | Acceso      | Filtros                                                                                                                  |
-| ------ | ------------------------- | ---------------------------- | ----------- | ------------------------------------------------------------------------------------------------------------------------ |
-| POST   | /register                 | Registro de usuario          | Público     |                                                                                                                          |
-| POST   | /login                    | Login de usuario             | Público     |                                                                                                                          |
-| GET    | /api/v1/events            | Obtener todos los eventos    | Autenticado | paginación (`page` y `limit`), `date_start` (YYYY-MM-DD), `date_end` (YYYY-MM-DD), `status` (draft o published), `title` |
-| GET    | /api/v1/events/:id        | Obtener un evento específico | Autenticado |                                                                                                                          |
-| POST   | /api/v1/events            | Crear un evento              | Admin       |                                                                                                                          |
-| DELETE | /api/v1/events/:id        | Borrar un evento             | Admin       |                                                                                                                          |
-| PATCH  | /api/v1/events/:id        | Actualizar un evento         | Admin       |                                                                                                                          |
-| POST   | /api/v1/events/:id/signup | Inscribirse a un evento      | Autenticado |                                                                                                                          |
-| GET    | /api/v1/user/events       | Obtener eventos del usuario  | Autenticado | paginación (`page` y `limit`), `filter` (past o upcoming)                                                                |
-
-| PATCH | /api/v1/users/:username/promote | Promover usuario a administrador | Admin | |
+| Método | Ruta                            | Acción                           | Acceso      | Filtros                                                                                                                  |
+| ------ | ------------------------------- | -------------------------------- | ----------- | ------------------------------------------------------------------------------------------------------------------------ |
+| POST   | /register                       | Registro de usuario              | Público     |                                                                                                                          |
+| POST   | /login                          | Login de usuario                 | Público     |                                                                                                                          |
+| GET    | /api/v1/events                  | Obtener todos los eventos        | Autenticado | paginación (`page` y `limit`), `date_start` (YYYY-MM-DD), `date_end` (YYYY-MM-DD), `status` (draft o published), `title` |
+| GET    | /api/v1/events/:id              | Obtener un evento específico     | Autenticado |                                                                                                                          |
+| POST   | /api/v1/events                  | Crear un evento                  | Admin       |                                                                                                                          |
+| DELETE | /api/v1/events/:id              | Borrar un evento                 | Admin       |                                                                                                                          |
+| PATCH  | /api/v1/events/:id              | Actualizar un evento             | Admin       |                                                                                                                          |
+| POST   | /api/v1/events/:id/signup       | Inscribirse a un evento          | Autenticado |                                                                                                                          |
+| GET    | /api/v1/user/events             | Obtener eventos del usuario      | Autenticado | paginación (`page` y `limit`), `filter` (past o upcoming)                                                                |
+| PATCH  | /api/v1/users/:username/promote | Promover usuario a administrador | Admin       |                                                                                                                          |
 
 ## Ejecución
 
