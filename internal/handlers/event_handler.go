@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"database/sql"
+	"math"
 	"net/http"
 	"strconv"
 	"strings"
@@ -39,6 +40,9 @@ func GetAllEvents(eventRepo *repositories.EventRepository) echo.HandlerFunc {
 		dateEndStr := c.QueryParam("date_end")
 		status := strings.ToLower(c.QueryParam("status"))
 		title := strings.ToLower(c.QueryParam("title"))
+		// Pagination
+		pageParam := c.QueryParam("page")
+		limitParam := c.QueryParam("limit")
 
 		// Parse the dates into a time.Time
 		var dateStart, dateEnd time.Time
@@ -75,11 +79,48 @@ func GetAllEvents(eventRepo *repositories.EventRepository) echo.HandlerFunc {
 			status = "published"
 		}
 
-		events, err := eventRepo.GetAll(dateStart, dateEnd, status, title)
+		// Default page and limit
+		page := 1
+		limit := 10
+
+		if pageParam != "" {
+			page, err = strconv.Atoi(pageParam)
+			if err != nil || page < 1 {
+				page = 1
+			}
+		}
+
+		if limitParam != "" {
+			limit, err = strconv.Atoi(limitParam)
+			if err != nil || limit < 1 {
+				limit = 10
+			}
+		}
+
+		// Calculate offset
+		offset := (page - 1) * limit
+
+		events, err := eventRepo.GetAll(dateStart, dateEnd, status, title, limit, offset)
 		if err != nil {
 			return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to get events"})
 		}
-		return c.JSON(http.StatusOK, events)
+
+		total, err := eventRepo.GetTotalCount(status, title, dateStart, dateEnd)
+		if err != nil {
+			return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to get total count"})
+		}
+
+		totalPages := int(math.Ceil(float64(total) / float64(limit)))
+
+		response := map[string]interface{}{
+			"events": events,
+			"page":   page,
+			"limit":  limit,
+			"total":  total,
+			"pages":  totalPages,
+		}
+
+		return c.JSON(http.StatusOK, response)
 	}
 }
 

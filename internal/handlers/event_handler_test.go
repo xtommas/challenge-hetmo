@@ -195,6 +195,8 @@ func TestGetAllEvents(t *testing.T) {
 		queryParams    string
 		expectedStatus int
 		expectedEvents []models.Event
+		expectedTotal  int
+		expectedPages  int
 		expectError    bool
 	}{
 		{
@@ -206,7 +208,9 @@ func TestGetAllEvents(t *testing.T) {
 				{Id: 1, Title: "event 1", Status: "draft", DateAndTime: eventTime},
 				{Id: 2, Title: "event 2", Status: "published", DateAndTime: eventTime},
 			},
-			expectError: false,
+			expectedTotal: 2,
+			expectedPages: 1,
+			expectError:   false,
 		},
 		{
 			name:           "Invalid date format",
@@ -223,6 +227,19 @@ func TestGetAllEvents(t *testing.T) {
 			expectedStatus: http.StatusForbidden,
 			expectedEvents: nil,
 			expectError:    true,
+		},
+		{
+			name:           "Pagination test",
+			isAdmin:        true,
+			queryParams:    "page=1&limit=2",
+			expectedStatus: http.StatusOK,
+			expectedEvents: []models.Event{
+				{Id: 1, Title: "event 1", Status: "draft", DateAndTime: eventTime},
+				{Id: 2, Title: "event 2", Status: "published", DateAndTime: eventTime},
+			},
+			expectedTotal: 5,
+			expectedPages: 3,
+			expectError:   false,
 		},
 	}
 
@@ -246,6 +263,10 @@ func TestGetAllEvents(t *testing.T) {
 					rows.AddRow(event.Id, event.Title, event.LongDescription, event.ShortDescription, event.DateAndTime, event.Organizer, event.Location, event.Status)
 				}
 				mock.ExpectQuery("SELECT (.+) FROM events").WillReturnRows(rows)
+
+				// Mock the count query for pagination
+				countRows := sqlmock.NewRows([]string{"count"}).AddRow(tc.expectedTotal)
+				mock.ExpectQuery("SELECT COUNT(.+) FROM events").WillReturnRows(countRows)
 			}
 
 			// Create repository with mock db
@@ -261,17 +282,25 @@ func TestGetAllEvents(t *testing.T) {
 
 			if tc.expectedStatus == http.StatusOK && !tc.expectError {
 				// For successful responses, unmarshal the result and compare events
-				var responseEvents []models.Event
-				err = json.Unmarshal(rec.Body.Bytes(), &responseEvents)
+				var response map[string]interface{}
+				err = json.Unmarshal(rec.Body.Bytes(), &response)
 				assert.NoError(t, err)
-				assert.Len(t, responseEvents, len(tc.expectedEvents))
+
+				events, ok := response["events"].([]interface{})
+				assert.True(t, ok)
+				assert.Len(t, events, len(tc.expectedEvents))
 
 				for i, expectedEvent := range tc.expectedEvents {
-					assert.Equal(t, expectedEvent.Id, responseEvents[i].Id)
-					assert.Equal(t, expectedEvent.Title, responseEvents[i].Title)
-					assert.Equal(t, expectedEvent.Status, responseEvents[i].Status)
-					assert.Equal(t, expectedEvent.DateAndTime.Format(time.RFC3339), responseEvents[i].DateAndTime.Format(time.RFC3339))
+					event := events[i].(map[string]interface{})
+					assert.Equal(t, float64(expectedEvent.Id), event["id"])
+					assert.Equal(t, expectedEvent.Title, event["title"])
+					assert.Equal(t, expectedEvent.Status, event["status"])
+					assert.Equal(t, expectedEvent.DateAndTime.Format(time.RFC3339), event["date_and_time"])
 				}
+
+				// Check pagination details
+				assert.Equal(t, float64(tc.expectedTotal), response["total"])
+				assert.Equal(t, float64(tc.expectedPages), response["pages"])
 			} else if tc.expectError {
 				// For error responses, unmarshal the error message
 				var errorResponse map[string]string

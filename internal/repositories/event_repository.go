@@ -90,7 +90,7 @@ func (e *EventRepository) Get(id int64) (*models.Event, error) {
 	return event, nil
 }
 
-func (e *EventRepository) GetAll(dateStart, dateEnd time.Time, status string, title string) ([]models.Event, error) {
+func (e *EventRepository) GetAll(dateStart, dateEnd time.Time, status string, title string, limit, offset int) ([]models.Event, error) {
 	// Add a condition that's always true in the query
 	// so we can append other conditions based on the
 	// query parameters that are provided
@@ -122,6 +122,11 @@ func (e *EventRepository) GetAll(dateStart, dateEnd time.Time, status string, ti
 		args = append(args, dateEnd)
 		argCounter++
 	}
+
+	// Append LIMIT and OFFSET for pagination
+	query += fmt.Sprintf(" LIMIT $%d OFFSET $%d", argCounter, argCounter+1)
+	args = append(args, limit, offset)
+	argCounter += 2
 
 	rows, err := e.DB.Query(query, args...)
 	if err != nil {
@@ -155,6 +160,42 @@ func (e *EventRepository) GetAll(dateStart, dateEnd time.Time, status string, ti
 	}
 
 	return events, nil
+}
+
+func (e *EventRepository) GetTotalCount(status string, title string, dateStart, dateEnd time.Time) (int, error) {
+	// Apply the same filtering conditions as in GetAll
+	query := `SELECT COUNT(*) FROM events WHERE 1=1`
+
+	args := []interface{}{}
+	argCounter := 1
+
+	// Add filtering conditions if query parameters are provided
+	if status != "" {
+		query += fmt.Sprintf(" AND status = $%d", argCounter)
+		args = append(args, status)
+		argCounter++
+	}
+	if title != "" {
+		query += fmt.Sprintf(" AND title LIKE $%d", argCounter)
+		args = append(args, "%"+title+"%")
+		argCounter++
+	}
+	if !dateStart.IsZero() {
+		query += fmt.Sprintf(" AND date_and_time >= $%d", argCounter)
+		args = append(args, dateStart)
+		argCounter++
+	}
+	if !dateEnd.IsZero() {
+		query += fmt.Sprintf(" AND date_and_time <= $%d", argCounter)
+		args = append(args, dateEnd)
+		argCounter++
+	}
+	var count int
+	err := e.DB.QueryRow(query, args...).Scan(&count)
+	if err != nil {
+		return 0, err
+	}
+	return count, nil
 }
 
 func (e *EventRepository) Delete(id int64) error {
