@@ -23,7 +23,10 @@ func TestCreateEvent(t *testing.T) {
 	e := echo.New()
 	e.Validator = validator.NewCustomValidator()
 
-	eventTime, _ := time.Parse(time.RFC3339, "2025-05-01T15:00:00Z")
+	eventTime, err := time.Parse(time.RFC3339, "2025-05-01T15:00:00Z")
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when parsing time", err)
+	}
 
 	// Create a request body
 	reqBody := `{
