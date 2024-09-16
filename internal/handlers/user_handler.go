@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"database/sql"
 	"net/http"
 	"os"
 	"time"
@@ -27,6 +28,7 @@ func Register(userRepo *repositories.UserRepository) echo.HandlerFunc {
 
 		user := &models.User{
 			Username: input.Username,
+			IsAdmin:  false,
 		}
 		if err := user.SetPassword(input.Password); err != nil {
 			return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to set password"})
@@ -52,7 +54,10 @@ func Login(userRepo *repositories.UserRepository) echo.HandlerFunc {
 
 		user, err := userRepo.Get(input.Username)
 		if err != nil {
-			return c.JSON(http.StatusUnauthorized, map[string]string{"error": "Invalid credentials"})
+			if err == sql.ErrNoRows {
+				return c.JSON(http.StatusUnauthorized, map[string]string{"error": "Invalid credentials"})
+			}
+			return c.JSON(http.StatusInternalServerError, map[string]string{"error": "An unexpected error occurred"})
 		}
 
 		if !user.CheckPassword(input.Password) {
@@ -63,7 +68,7 @@ func Login(userRepo *repositories.UserRepository) echo.HandlerFunc {
 
 		// Set claims (the info that the JWT transmits)
 		claims := token.Claims.(jwt.MapClaims)
-		claims["user_id"] = user.ID
+		claims["user_id"] = user.Id
 		claims["username"] = user.Username
 		claims["is_admin"] = user.IsAdmin
 		claims["exp"] = time.Now().Add(time.Hour * 72).Unix()
@@ -78,5 +83,35 @@ func Login(userRepo *repositories.UserRepository) echo.HandlerFunc {
 			"token": t,
 		})
 
+	}
+}
+
+func PromoteUserToAdmin(userRepo *repositories.UserRepository) echo.HandlerFunc {
+	return func(c echo.Context) error {
+		// Get the username from the URL
+		username := c.Param("username")
+
+		// Get the user from the repository
+		user, err := userRepo.Get(username)
+		if err != nil {
+			if err == sql.ErrNoRows {
+				return c.JSON(http.StatusNotFound, map[string]string{"error": "User not found"})
+			}
+			return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to promote user"})
+		}
+
+		// Check if the user is already an admin
+		if user.IsAdmin {
+			return c.JSON(http.StatusBadRequest, map[string]string{"error": "User is already an admin"})
+		}
+
+		// Promote the user to admin
+		user.IsAdmin = true
+		err = userRepo.Update(user)
+		if err != nil {
+			return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to promote user"})
+		}
+
+		return c.JSON(http.StatusOK, map[string]string{"message": "User promoted to admin successfully"})
 	}
 }

@@ -124,6 +124,7 @@ func main() {
 	r.PATCH("/events/:id", middleware.AdminOnly(handlers.UpdateEvent(eventRepo)))
 	r.POST("/events/:id/signup", handlers.SignUpForEvent(userEventRepo))
 	r.GET("/user/events", handlers.GetUserEvents(userEventRepo))
+	r.PATCH("/users/:username/promote", middleware.AdminOnly(handlers.PromoteUserToAdmin(userRepo)))
 
 	e.Logger.Fatal(e.Start(":8080"))
 }

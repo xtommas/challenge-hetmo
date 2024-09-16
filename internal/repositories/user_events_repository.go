@@ -34,7 +34,7 @@ func (r *UserEventRepository) CreateSignUp(userID, eventID int64) error {
 	}
 
 	if rowsAffected == 0 {
-		return errors.New("Can't sign up to event")
+		return errors.New("can't sign up to event")
 	}
 
 	return nil

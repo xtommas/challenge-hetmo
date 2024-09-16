@@ -70,7 +70,7 @@ func (e *EventRepository) Update(event *models.Event) error {
 func (e *EventRepository) Get(id int64) (*models.Event, error) {
 	query := `SELECT * FROM events WHERE id = $1`
 	row := e.DB.QueryRow(query, id)
-	var event models.Event
+	event := &models.Event{}
 	err := row.Scan(
 		&event.Id,
 		&event.Title,
@@ -87,7 +87,7 @@ func (e *EventRepository) Get(id int64) (*models.Event, error) {
 		}
 		return nil, err
 	}
-	return &event, nil
+	return event, nil
 }
 
 func (e *EventRepository) GetAll(dateStart, dateEnd time.Time, status string, title string) ([]models.Event, error) {
