@@ -51,5 +51,5 @@ Finalmente, se pueden realizar requests utilizando algún cliente HTTP a `localh
 
 - No se supuso ningún orden para el listado de eventos, por lo que se devuelven sin un orden en particular.
 - Los adminstradores tienen la capacidad de dar de alta un evento con el estado "published", no se fuerza a que el evento deba pasar primero por el estado "draft".
-- Se asume que pueden existir múltiples adminstradores, entonces, los administradores tienen la capacidad de promover a otros usuarios a administradores utilizando su nombre de usuario.
+- Se asume que pueden existir múltiples administradores, entonces, los administradores tienen la capacidad de promover a otros usuarios a administradores utilizando su nombre de usuario.
 - La aplicación crea un usuario administrador por defecto con el nombre de usuario y contraseña especificados en las variables de entorno `ADMIN_USERNAME` y `ADMIN_PASSWORD`.
