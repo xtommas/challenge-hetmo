@@ -40,36 +40,43 @@ func (r *UserEventRepository) CreateSignUp(userID, eventID int64) error {
 	return nil
 }
 
-func (r *UserEventRepository) GetAll(userID int64, filter string) ([]models.Event, error) {
-	var query string
-	var args []interface{}
-
-	switch filter {
-	case "upcoming":
-		query = `
-			SELECT e.id, e.title, e.long_description, e.short_description, e.date_and_time, e.organizer, e.location, e.status
-			FROM events e
-			JOIN user_events ue ON e.id = ue.event_id
-			WHERE ue.user_id = $1 AND e.date_and_time > NOW()
-		`
-		args = append(args, userID)
-	case "past":
-		query = `
-			SELECT e.id, e.title, e.long_description, e.short_description, e.date_and_time, e.organizer, e.location, e.status
-			FROM events e
-			JOIN user_events ue ON e.id = ue.event_id
-			WHERE ue.user_id = $1 AND e.date_and_time <= NOW()
-		`
-		args = append(args, userID)
-	default:
-		query = `
-			SELECT e.id, e.title, e.long_description, e.short_description, e.date_and_time, e.organizer, e.location, e.status
-			FROM events e
+func (r *UserEventRepository) GetTotalCount(userID int64, filter string) (int, error) {
+	query := `
+			SELECT COUNT(*) FROM events e
 			JOIN user_events ue ON e.id = ue.event_id
 			WHERE ue.user_id = $1
-		`
-		args = append(args, userID)
+			`
+	args := []interface{}{userID}
+
+	// Apply filter
+	if filter == "upcoming" {
+		query += ` AND e.date_and_time > NOW()`
+	} else if filter == "past" {
+		query += ` AND e.date_and_time <= NOW()`
 	}
+
+	var count int
+	if err := r.DB.QueryRow(query, args...).Scan(&count); err != nil {
+		return 0, err
+	}
+
+	return count, nil
+}
+
+func (r *UserEventRepository) GetAll(userID int64, filter string, limit, offset int) ([]models.Event, error) {
+	query := `SELECT e.id, e.title, e.long_description, e.short_description, e.date_and_time, e.organizer, e.location, e.status
+              FROM events e
+              JOIN user_events ue ON e.id = ue.event_id
+              WHERE ue.user_id = $1`
+
+	if filter == "upcoming" {
+		query += ` AND e.date_and_time > NOW()`
+	} else if filter == "past" {
+		query += ` AND e.date_and_time <= NOW()`
+	}
+
+	query += ` LIMIT $2 OFFSET $3`
+	args := []interface{}{userID, limit, offset}
 
 	rows, err := r.DB.Query(query, args...)
 	if err != nil {

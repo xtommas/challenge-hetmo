@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"math"
 	"net/http"
 	"strconv"
 
@@ -31,16 +32,58 @@ func GetUserEvents(userEventRepo *repositories.UserEventRepository) echo.Handler
 			return c.JSON(http.StatusUnauthorized, map[string]string{"error": "Invalid user"})
 		}
 
+		// Pagination
+		pageParam := c.QueryParam("page")
+		limitParam := c.QueryParam("limit")
+
 		filter := c.QueryParam("filter")
 		if filter != "upcoming" && filter != "past" && filter != "" {
 			return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid filter option"})
 		}
 
-		events, err := userEventRepo.GetAll(userID, filter)
+		// Default page and limit
+		page := 1
+		limit := 10
+
+		var err error
+
+		if pageParam != "" {
+			page, err = strconv.Atoi(pageParam)
+			if err != nil || page < 1 {
+				page = 1
+			}
+		}
+
+		if limitParam != "" {
+			limit, err = strconv.Atoi(limitParam)
+			if err != nil || limit < 1 {
+				limit = 10
+			}
+		}
+
+		// Calculate offset
+		offset := (page - 1) * limit
+
+		events, err := userEventRepo.GetAll(userID, filter, limit, offset)
 		if err != nil {
 			return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to get events"})
 		}
 
-		return c.JSON(http.StatusOK, events)
+		total, err := userEventRepo.GetTotalCount(userID, filter)
+		if err != nil {
+			return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to get total count"})
+		}
+
+		totalPages := int(math.Ceil(float64(total) / float64(limit)))
+
+		response := map[string]interface{}{
+			"events": events,
+			"page":   page,
+			"limit":  limit,
+			"total":  total,
+			"pages":  totalPages,
+		}
+
+		return c.JSON(http.StatusOK, response)
 	}
 }
